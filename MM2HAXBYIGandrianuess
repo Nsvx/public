@@ -222,7 +222,7 @@ local function executeTeleport()
     
     if not detectedMaps[targetMap] then detectedMaps[targetMap] = tick() end
     local timePassed = tick() - detectedMaps[targetMap]
-    local timeLeft = math.max(0, math.ceil(25 - timePassed))
+    local timeLeft = math.max(0, math.ceil(11 - timePassed))
     
     if lastTeleportedMap ~= targetMap then
         TpButton.Text = "Waiting: " .. timeLeft .. "s (" .. targetMap .. ")"
