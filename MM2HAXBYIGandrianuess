@@ -152,10 +152,10 @@ local MurdererLabel = Instance.new("TextLabel")
 MurdererLabel.Size = UDim2.new(0, 220, 0, 30)
 MurdererLabel.Position = UDim2.new(0, 10, 0, 190)
 MurdererLabel.BackgroundTransparency = 1
-MurdererLabel.Text = "Murder: Scanning..."
+MurdererLabel.Text = "MURDER: SCANNING..."
 MurdererLabel.TextColor3 = Color3.fromRGB(255, 80, 80)
 MurdererLabel.Font = Enum.Font.SourceSansBold
-MurdererLabel.TextSize = 14
+MurdererLabel.TextSize = 18
 MurdererLabel.TextXAlignment = Enum.TextXAlignment.Left
 MurdererLabel.Parent = MainPanel
 
@@ -164,10 +164,10 @@ local SheriffLabel = Instance.new("TextLabel")
 SheriffLabel.Size = UDim2.new(0, 220, 0, 30)
 SheriffLabel.Position = UDim2.new(0, 10, 0, 225)
 SheriffLabel.BackgroundTransparency = 1
-SheriffLabel.Text = "Sheriff: Scanning..."
+SheriffLabel.Text = "SHERIFF: SCANNING..."
 SheriffLabel.TextColor3 = Color3.fromRGB(80, 150, 255)
 SheriffLabel.Font = Enum.Font.SourceSansBold
-SheriffLabel.TextSize = 14
+SheriffLabel.TextSize = 18
 SheriffLabel.TextXAlignment = Enum.TextXAlignment.Left
 SheriffLabel.Parent = MainPanel
 
@@ -222,13 +222,13 @@ local function executeTeleport()
     
     if not detectedMaps[targetMap] then detectedMaps[targetMap] = tick() end
     local timePassed = tick() - detectedMaps[targetMap]
-    local timeLeft = math.max(0, math.ceil(11 - timePassed))
+    local timeLeft = math.max(0, math.ceil(14 - timePassed))
     
     if lastTeleportedMap ~= targetMap then
         TpButton.Text = "Waiting: " .. timeLeft .. "s (" .. targetMap .. ")"
     end
     
-    if timePassed >= 11 and lastTeleportedMap ~= targetMap then
+    if timePassed >= 14 and lastTeleportedMap ~= targetMap then
         lastTeleportedMap = targetMap
         TpButton.Text = "Teleporting..."
         
