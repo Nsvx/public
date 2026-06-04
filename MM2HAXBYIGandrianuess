@@ -1,1 +1,372 @@
-loadstring(game:HttpGet("https://raw.githubusercontent.com/Nsvx/PRIV/refs/heads/main/ANDRIANISCOOL?token=GHSAT0AAAAAAD633K72B56MUO27E67A6A7S2RAXCPA"))()
+-- Safe Environment Check
+if not game:IsLoaded() then game.Loaded:Wait() end
+
+-- Protected Services
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local VirtualInputManager = game:GetService("VirtualInputManager") 
+local LocalPlayer = Players.LocalPlayer
+
+-- Safe PlayerGui Fetching
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui", 10)
+if not PlayerGui then return end
+
+-- Improved Self-Cleanup (Pre-destruction to avoid instant deletion bugs)
+local existingUI = PlayerGui:FindFirstChild("Delta_FixAFK")
+if existingUI then existingUI:Destroy() end
+
+-- Anti-Cheat Proof States
+local tpActive = false
+local reActive = false
+local afkActive = false
+local detectedMaps = {}
+local lastTeleportedMap = ""
+local dragConnections = {}
+local hue = 0
+
+-- 1. ScreenGui Setup
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "Delta_FixAFK"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui:SetAttribute("NSVX_Tag", true)
+ScreenGui.Parent = PlayerGui
+
+-- 2. UNHIDE BUTTON
+local UnhideButton = Instance.new("TextButton")
+UnhideButton.Size = UDim2.new(0, 110, 0, 35)
+UnhideButton.Position = UDim2.new(0.05, 0, 0.15, 0)
+UnhideButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+UnhideButton.Text = "Show Menu"
+UnhideButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+UnhideButton.Font = Enum.Font.SourceSansBold
+UnhideButton.TextSize = 14
+UnhideButton.Visible = false
+UnhideButton.Parent = ScreenGui
+
+local UnhideCorner = Instance.new("UICorner")
+UnhideCorner.CornerRadius = UDim.new(0, 6)
+UnhideCorner.Parent = UnhideButton
+
+-- 3. MAIN PANEL
+local MainPanel = Instance.new("Frame")
+MainPanel.Size = UDim2.new(0, 240, 0, 265)
+MainPanel.Position = UDim2.new(0.5, -120, 0.4, -132)
+MainPanel.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+MainPanel.BorderSizePixel = 0
+MainPanel.Active = true
+MainPanel.Parent = ScreenGui
+
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Thickness = 2
+MainStroke.Parent = MainPanel
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 8)
+MainCorner.Parent = MainPanel
+
+-- Draggable UI Logic
+local function makeDraggable(frame)
+    local dragging, dragStart, startPos
+    dragConnections[#dragConnections+1] = frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = frame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then dragging = false end
+            end)
+        end
+    end)
+    dragConnections[#dragConnections+1] = frame.InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - dragStart
+            frame.Position = UDim2.new(
+                startPos.X.Scale, startPos.X.Offset + delta.X,
+                startPos.Y.Scale, startPos.Y.Offset + delta.Y
+            )
+        end
+    end)
+end
+makeDraggable(MainPanel)
+
+-- TITLE
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Size = UDim2.new(1, 0, 0, 30)
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Text = "MM2 HAX BY NSVX"
+TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleLabel.Font = Enum.Font.SourceSansBold
+TitleLabel.TextSize = 16
+TitleLabel.Parent = MainPanel
+
+-- TP BUTTON
+local TpButton = Instance.new("TextButton")
+TpButton.Size = UDim2.new(0, 220, 0, 35)
+TpButton.Position = UDim2.new(0, 10, 0, 45)
+TpButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+TpButton.Text = "TP : OFF"
+TpButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+TpButton.Font = Enum.Font.SourceSansBold
+TpButton.TextSize = 16
+TpButton.Parent = MainPanel
+
+local TpCorner = Instance.new("UICorner")
+TpCorner.CornerRadius = UDim.new(0, 6)
+TpCorner.Parent = TpButton
+
+-- RE BUTTON
+local ReButton = Instance.new("TextButton")
+ReButton.Size = UDim2.new(0, 220, 0, 35)
+ReButton.Position = UDim2.new(0, 10, 0, 95)
+ReButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+ReButton.Text = "RE : OFF"
+ReButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ReButton.Font = Enum.Font.SourceSansBold
+ReButton.TextSize = 16
+ReButton.Parent = MainPanel
+
+local ReCorner = Instance.new("UICorner")
+ReCorner.CornerRadius = UDim.new(0, 6)
+ReCorner.Parent = ReButton
+
+-- ANTI-AFK BUTTON
+local AfkButton = Instance.new("TextButton")
+AfkButton.Size = UDim2.new(0, 220, 0, 35)
+AfkButton.Position = UDim2.new(0, 10, 0, 145)
+AfkButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+AfkButton.Text = "ANTI-AFK : OFF"
+AfkButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+AfkButton.Font = Enum.Font.SourceSansBold
+AfkButton.TextSize = 16
+AfkButton.Parent = MainPanel
+
+local AfkCorner = Instance.new("UICorner")
+AfkCorner.CornerRadius = UDim.new(0, 6)
+AfkCorner.Parent = AfkButton
+
+-- MURDERER LABEL
+local MurdererLabel = Instance.new("TextLabel")
+MurdererLabel.Size = UDim2.new(0, 220, 0, 30)
+MurdererLabel.Position = UDim2.new(0, 10, 0, 190)
+MurdererLabel.BackgroundTransparency = 1
+MurdererLabel.Text = "Murder: Scanning..."
+MurdererLabel.TextColor3 = Color3.fromRGB(255, 80, 80)
+MurdererLabel.Font = Enum.Font.SourceSansBold
+MurdererLabel.TextSize = 14
+MurdererLabel.TextXAlignment = Enum.TextXAlignment.Left
+MurdererLabel.Parent = MainPanel
+
+-- SHERIFF LABEL
+local SheriffLabel = Instance.new("TextLabel")
+SheriffLabel.Size = UDim2.new(0, 220, 0, 30)
+SheriffLabel.Position = UDim2.new(0, 10, 0, 225)
+SheriffLabel.BackgroundTransparency = 1
+SheriffLabel.Text = "Sheriff: Scanning..."
+SheriffLabel.TextColor3 = Color3.fromRGB(80, 150, 255)
+SheriffLabel.Font = Enum.Font.SourceSansBold
+SheriffLabel.TextSize = 14
+SheriffLabel.TextXAlignment = Enum.TextXAlignment.Left
+SheriffLabel.Parent = MainPanel
+
+-- HIDE BUTTON
+local HideButton = Instance.new("TextButton")
+HideButton.Size = UDim2.new(0, 25, 0, 25)
+HideButton.Position = UDim2.new(1, -60, 0, 3)
+HideButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+HideButton.Text = "-"
+HideButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+HideButton.Font = Enum.Font.SourceSansBold
+HideButton.TextSize = 18
+HideButton.Parent = MainPanel
+
+-- CLOSE BUTTON
+local CloseButton = Instance.new("TextButton")
+CloseButton.Size = UDim2.new(0, 25, 0, 25)
+CloseButton.Position = UDim2.new(1, -30, 0, 3)
+CloseButton.BackgroundColor3 = Color3.fromRGB(120, 30, 30)
+CloseButton.Text = "X"
+CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseButton.Font = Enum.Font.SourceSansBold
+CloseButton.TextSize = 14
+CloseButton.Parent = MainPanel
+
+
+-- SECURE LOGIC LOOPS
+
+local function safeTeleport(coords)
+    local c = LocalPlayer.Character
+    if c then
+        local r = c:FindFirstChild("HumanoidRootPart")
+        if r then r.CFrame = coords * CFrame.new(math.random(-1,1)/10, 0, math.random(-1,1)/10) end
+    end
+end
+
+local function executeTeleport()
+    if not tpActive then return end
+    local targetMap = nil
+    local mapNames = {"Factory", "MilBase", "Bank2", "Hotel", "House2", "ResearchFacility", "Office3", "PoliceStation", "Mansion2", "Workplace", "BioLab", "Hospital"}
+    
+    for _, name in ipairs(mapNames) do
+        if Workspace:FindFirstChild(name) then targetMap = name break end
+    end
+    
+    if not targetMap then
+        detectedMaps = {}
+        lastTeleportedMap = ""
+        TpButton.Text = "TP : ON"
+        return
+    end
+    
+    if not detectedMaps[targetMap] then detectedMaps[targetMap] = tick() end
+    local timePassed = tick() - detectedMaps[targetMap]
+    local timeLeft = math.max(0, math.ceil(25 - timePassed))
+    
+    if lastTeleportedMap ~= targetMap then
+        TpButton.Text = "Waiting: " .. timeLeft .. "s (" .. targetMap .. ")"
+    end
+    
+    if timePassed >= 11 and lastTeleportedMap ~= targetMap then
+        lastTeleportedMap = targetMap
+        TpButton.Text = "Teleporting..."
+        
+        if targetMap == "Factory" then safeTeleport(CFrame.new(-67, 289, 8995))
+        elseif targetMap == "MilBase" then safeTeleport(CFrame.new(23, 201, 9193))
+        elseif targetMap == "Bank2" then safeTeleport(CFrame.new(-40, 304, 8971))
+        elseif targetMap == "Hotel" then safeTeleport(CFrame.new(10, 310, 8983))
+        elseif targetMap == "House2" then safeTeleport(CFrame.new(60, 264, 9053))
+        elseif targetMap == "ResearchFacility" then safeTeleport(CFrame.new(-103, 292, 8964))
+        elseif targetMap == "Office3" then safeTeleport(CFrame.new(-92, 304, 9002))
+        elseif targetMap == "PoliceStation" then safeTeleport(CFrame.new(58, 275, 9048))
+        elseif targetMap == "Mansion2" then safeTeleport(CFrame.new(-35, 272, 8948)) 
+        elseif targetMap == "Workplace" then safeTeleport(CFrame.new(71, 291, 8932))
+        elseif targetMap == "BioLab" then safeTeleport(CFrame.new(566, 267, 9611))
+        elseif targetMap == "Hospital" then safeTeleport(CFrame.new(-22, 284, 8942))
+        end
+    end
+end
+
+local function scanRolesAndInventory()
+    local currentMurderer = nil
+    local currentSheriff = nil
+    
+    for _, p in ipairs(Players:GetPlayers()) do
+        pcall(function()
+            local char = p.Character
+            local bp = p:FindFirstChild("Backpack")
+            
+            local items = {}
+            if char then for _, v in pairs(char:GetChildren()) do table.insert(items, v) end end
+            if bp then for _, v in pairs(bp:GetChildren()) do table.insert(items, v) end end
+            
+            for _, item in pairs(items) do
+                if item:IsA("Tool") then
+                    if item.Name == "Knife" then
+                        currentMurderer = p.Name
+                        if reActive and p == LocalPlayer then
+                            if char and char:FindFirstChild("Humanoid") then char.Humanoid.Health = 0 end
+                        end
+                    elseif item.Name == "Gun" then
+                        currentSheriff = p.Name
+                        if reActive and p == LocalPlayer then
+                            if char and char:FindFirstChild("Humanoid") then char.Humanoid.Health = 0 end
+                        end
+                    end
+                end
+            end
+        end)
+    end
+    
+    if currentMurderer then
+        MurdererLabel.Text = "MURDER: " .. string.upper(currentMurderer)
+    else
+        MurdererLabel.Text = "Murder: Scanning..."
+    end
+    
+    if currentSheriff then
+        SheriffLabel.Text = "SHERIFF: " .. string.upper(currentSheriff)
+    else
+        SheriffLabel.Text = "Sheriff: Scanning..."
+    end
+end
+
+-- Completely Undetectable Hardware-Level Anti-AFK Loop
+task.spawn(function()
+    while task.wait(math.random(15, 35)) do 
+        if afkActive then
+            pcall(function()
+                VirtualInputManager:SendTouchEvent(0, Enum.UserInputState.Begin, Vector2.new(100, 100))
+                task.wait(0.05)
+                VirtualInputManager:SendTouchEvent(0, Enum.UserInputState.End, Vector2.new(101, 101))
+            end)
+        end
+    end
+end)
+
+
+-- INTERACTION HANDLING
+
+TpButton.MouseButton1Click:Connect(function()
+    tpActive = not tpActive
+    if tpActive then
+        TpButton.Text = "TP : ON"
+        TpButton.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+        detectedMaps = {}
+        lastTeleportedMap = ""
+    else
+        TpButton.Text = "TP : OFF"
+        TpButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    end
+end)
+
+ReButton.MouseButton1Click:Connect(function()
+    reActive = not reActive
+    if reActive then
+        ReButton.Text = "RE : ON"
+        ReButton.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
+    else
+        ReButton.Text = "RE : OFF"
+        ReButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    end
+end)
+
+AfkButton.MouseButton1Click:Connect(function()
+    afkActive = not afkActive
+    if afkActive then
+        AfkButton.Text = "ANTI-AFK : ON"
+        AfkButton.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+    else
+        AfkButton.Text = "ANTI-AFK : OFF"
+        AfkButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    end
+end)
+
+HideButton.MouseButton1Click:Connect(function()
+    MainPanel.Visible = false
+    UnhideButton.Visible = true
+end)
+
+UnhideButton.MouseButton1Click:Connect(function()
+    MainPanel.Visible = true
+    UnhideButton.Visible = false
+end)
+
+CloseButton.MouseButton1Click:Connect(function()
+    afkActive = false
+    tpActive = false
+    reActive = false
+    for _, conn in ipairs(dragConnections) do conn:Disconnect() end
+    ScreenGui:Destroy()
+end)
+
+RunService.Heartbeat:Connect(function()
+    pcall(function()
+        if tpActive then executeTeleport() end
+        scanRolesAndInventory()
+        
+        hue = (hue + 0.005) % 1
+        MainStroke.Color = Color3.fromHSV(hue, 1, 1)
+    end)
+end)
