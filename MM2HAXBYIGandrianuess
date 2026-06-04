@@ -155,7 +155,7 @@ MurdererLabel.BackgroundTransparency = 1
 MurdererLabel.Text = "MURDER: SCANNING..."
 MurdererLabel.TextColor3 = Color3.fromRGB(255, 80, 80)
 MurdererLabel.Font = Enum.Font.SourceSansBold
-MurdererLabel.TextSize = 18
+MurdererLabel.TextSize = 23
 MurdererLabel.TextXAlignment = Enum.TextXAlignment.Left
 MurdererLabel.Parent = MainPanel
 
@@ -167,7 +167,7 @@ SheriffLabel.BackgroundTransparency = 1
 SheriffLabel.Text = "SHERIFF: SCANNING..."
 SheriffLabel.TextColor3 = Color3.fromRGB(80, 150, 255)
 SheriffLabel.Font = Enum.Font.SourceSansBold
-SheriffLabel.TextSize = 18
+SheriffLabel.TextSize = 23
 SheriffLabel.TextXAlignment = Enum.TextXAlignment.Left
 SheriffLabel.Parent = MainPanel
 
@@ -222,13 +222,13 @@ local function executeTeleport()
     
     if not detectedMaps[targetMap] then detectedMaps[targetMap] = tick() end
     local timePassed = tick() - detectedMaps[targetMap]
-    local timeLeft = math.max(0, math.ceil(14 - timePassed))
+    local timeLeft = math.max(0, math.ceil(12 - timePassed))
     
     if lastTeleportedMap ~= targetMap then
         TpButton.Text = "Waiting: " .. timeLeft .. "s (" .. targetMap .. ")"
     end
     
-    if timePassed >= 14 and lastTeleportedMap ~= targetMap then
+    if timePassed >= 12 and lastTeleportedMap ~= targetMap then
         lastTeleportedMap = targetMap
         TpButton.Text = "Teleporting..."
         
